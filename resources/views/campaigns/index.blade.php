@@ -80,7 +80,7 @@
                         <div class="w-full bg-gray-200 rounded-full h-2 mb-4">
                             @php
                                 $progress = $campaign->total_numbers > 0 
-                                    ? (($campaign->sent_count + $campaign->failed_count) / $campaign->total_numbers) * 100 
+                                    ? (($campaign->sent_count) / $campaign->total_numbers) * 100 
                                     : 0;
                             @endphp
                             <div class="bg-green-600 h-2 rounded-full transition-all" style="width: {{ $progress }}%"></div>

@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AuthController;
 use App\Http\Controllers\CampaignController;
+use App\Http\Controllers\CampaignExportController;
 use App\Http\Controllers\WhatsAppWebhookController;
 use Illuminate\Support\Facades\Route;
 
@@ -23,4 +24,8 @@ Route::middleware('simple.auth')->group(function () {
     Route::resource('campaigns', CampaignController::class);
     Route::post('campaigns/{campaign}/send', [CampaignController::class, 'send'])->name('campaigns.send');
     Route::get('campaigns/{campaign}/analytics', [CampaignController::class, 'analytics'])->name('campaigns.analytics');
+    
+    // Export Routes
+    Route::get('campaigns/{campaign}/export/csv', [CampaignExportController::class, 'exportCsv'])->name('campaigns.export.csv');
+    Route::get('campaigns/{campaign}/export/json', [CampaignExportController::class, 'exportJson'])->name('campaigns.export.json');
 });
