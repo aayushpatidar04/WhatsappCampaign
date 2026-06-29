@@ -24,7 +24,7 @@ class WhatsAppService
         $this->phoneNumberId = config('whatsapp.phone_number_id');
         $this->templateName = config('whatsapp.template_name');
         $this->languageCode = config('whatsapp.language_code');
-        $this->rateLimitPerMinute = config('whatsapp.rate_limit_per_minute', 80);
+        $this->rateLimitPerMinute = config('whatsapp.rate_limit_per_minute', 20);
         $this->headerImageUrl = config('whatsapp.header_image_url');
     }
 

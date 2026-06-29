@@ -109,15 +109,12 @@ class CampaignController extends Controller
             return redirect()->back()->with('error', 'Campaign is already ' . $campaign->status);
         }
 
-        if ($campaign->pendingMessages()->count() > 50) {
-            $campaign->update(['status' => 'running', 'started_at' => now()]);
-            return redirect()->route('campaigns.show', $campaign)
-                ->with('info', 'Campaign is running in background. Refresh to see progress.');
-        }
+        $campaign->update(['status' => 'running', 'started_at' => now()]);
 
-        $this->whatsappService->sendBulkCampaign($campaign, function ($current, $total, $result) {
-            // Progress handled via DB
-        });
+        // Dispatch one job per pending message
+        foreach ($campaign->pendingMessages()->cursor() as $message) {
+            \App\Jobs\SendCampaignMessageJob::dispatch($message);
+        }
 
         return redirect()->route('campaigns.show', $campaign)
             ->with('success', 'Campaign completed!');
