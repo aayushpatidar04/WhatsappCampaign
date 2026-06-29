@@ -19,7 +19,7 @@ class CampaignController extends Controller
 
     public function index()
     {
-        $campaigns = Campaign::latest()->paginate(10);
+        $campaigns = Campaign::with(['messages'])->latest()->paginate(10);
         return view('campaigns.index', compact('campaigns'));
     }
 

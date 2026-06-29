@@ -60,19 +60,19 @@
 
                         <div class="grid grid-cols-4 gap-2 mb-4 text-center">
                             <div class="bg-gray-50 rounded-lg p-2">
-                                <div class="text-lg font-bold text-gray-800">{{ $campaign->total_numbers }}</div>
+                                <div class="text-lg font-bold text-gray-800">{{ $campaign->messages()->count() }}</div>
                                 <div class="text-xs text-gray-500">Total</div>
                             </div>
                             <div class="bg-green-50 rounded-lg p-2">
-                                <div class="text-lg font-bold text-green-600">{{ $campaign->delivered_count }}</div>
+                                <div class="text-lg font-bold text-green-600">{{ $campaign->messages()->where('status', 'delivered')->count() }}</div>
                                 <div class="text-xs text-green-600">Delivered</div>
                             </div>
                             <div class="bg-blue-50 rounded-lg p-2">
-                                <div class="text-lg font-bold text-blue-600">{{ $campaign->read_count }}</div>
+                                <div class="text-lg font-bold text-blue-600">{{ $campaign->messages()->where('status', 'read')->count() }}</div>
                                 <div class="text-xs text-blue-600">Read</div>
                             </div>
                             <div class="bg-red-50 rounded-lg p-2">
-                                <div class="text-lg font-bold text-red-600">{{ $campaign->failed_count }}</div>
+                                <div class="text-lg font-bold text-red-600">{{ $campaign->messages()->where('status', 'failed')->count() }}</div>
                                 <div class="text-xs text-red-600">Failed</div>
                             </div>
                         </div>
