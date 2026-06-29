@@ -45,12 +45,12 @@ class CampaignExportController extends Controller
             fputcsv($handle, ['SUMMARY STATISTICS']);
             fputcsv($handle, []);
             fputcsv($handle, ['Metric', 'Count', 'Percentage']);
-            $total = $campaign->total_numbers;
+            $total = $campaign->messages()->count();
             fputcsv($handle, ['Total Numbers', $total, '100%']);
-            fputcsv($handle, ['Sent', $campaign->sent_count, $total > 0 ? round(($campaign->sent_count / $total) * 100, 2) . '%' : '0%']);
-            fputcsv($handle, ['Delivered', $campaign->delivered_count, $total > 0 ? round(($campaign->delivered_count / $total) * 100, 2) . '%' : '0%']);
-            fputcsv($handle, ['Read', $campaign->read_count, $total > 0 ? round(($campaign->read_count / $total) * 100, 2) . '%' : '0%']);
-            fputcsv($handle, ['Failed', $campaign->failed_count, $total > 0 ? round(($campaign->failed_count / $total) * 100, 2) . '%' : '0%']);
+            fputcsv($handle, ['Sent', $campaign->messages()->where('status', 'sent')->count(), round((($campaign->messages()->where('status', 'sent')->count() + $campaign->messages()->where('status', 'delivered')->count() + $campaign->messages()->where('status', 'read')->count()) / $total) * 100, 2) . '%']);
+            fputcsv($handle, ['Delivered', $campaign->messages()->where('status', 'delivered')->count(), round(($campaign->messages()->where('status', 'delivered')->count() / ($campaign->messages()->where('status', 'sent')->count() + $campaign->messages()->where('status', 'delivered')->count() + $campaign->messages()->where('status', 'read')->count())) * 100, 2) . '%']);
+            fputcsv($handle, ['Read', $campaign->messages()->where('status', 'read')->count(), round(($campaign->messages()->where('status', 'read')->count() / ($campaign->messages()->where('status', 'delivered')->count() + $campaign->messages()->where('status', 'read')->count())) * 100, 2) . '%']);
+            fputcsv($handle, ['Failed', $campaign->messages()->where('status', 'failed')->count(), round(($campaign->messages()->where('status', 'failed')->count() / $total) * 100, 2) . '%']);
             fputcsv($handle, ['Pending', $campaign->pendingMessages()->count(), $total > 0 ? round(($campaign->pendingMessages()->count() / $total) * 100, 2) . '%' : '0%']);
             fputcsv($handle, []);
 
