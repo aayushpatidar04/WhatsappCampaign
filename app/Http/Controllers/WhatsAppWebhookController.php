@@ -3,8 +3,12 @@
 namespace App\Http\Controllers;
 
 use App\Models\CampaignMessage;
+use App\Models\WhatsappIncomingMessage;
+use Carbon\Carbon;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Http;
 
 class WhatsAppWebhookController extends Controller
 {
@@ -33,13 +37,19 @@ class WhatsAppWebhookController extends Controller
     {
         $data = $request->all();
 
-        Log::info('WhatsApp webhook received', ['payload' => $data]);
+        Log::info('WhatsApp webhook received', [
+            'payload' => json_encode($data, JSON_PRETTY_PRINT)
+        ]);
 
         $entries = $data['entry'] ?? [];
         foreach ($entries as $entry) {
             $changes = $entry['changes'] ?? [];
             foreach ($changes as $change) {
                 $value = $change['value'] ?? [];
+                
+                $metadata = $value['metadata'] ?? [];
+
+                $toPhone = $metadata['display_phone_number'] ?? null;
 
                 if (isset($value['statuses'])) {
                     foreach ($value['statuses'] as $status) {
@@ -49,11 +59,17 @@ class WhatsAppWebhookController extends Controller
 
                 if (isset($value['messages'])) {
                     foreach ($value['messages'] as $message) {
+                        $this->storeMessage($message, $toPhone, $value['contacts'] ?? []);
                         $this->processIncomingMessage($message);
                     }
                 }
             }
         }
+        
+        // Http::post(
+        //     'https://crm.arihantcapital.com/webhooks/meta/whatsapp',
+        //     $data
+        // );
 
         return response()->json(['status' => 'ok']);
     }
@@ -135,6 +151,90 @@ class WhatsAppWebhookController extends Controller
         Log::info('Incoming message received', [
             'from' => $from,
             'type' => $type,
+        ]);
+    }
+    
+    protected function storeMessage(array $message, ?string $toPhone, array $contacts): void
+    {
+        $waMessageId = $message['id'] ?? null;
+
+        // Skip duplicates
+        if (WhatsappIncomingMessage::where('wa_message_id', $waMessageId)->exists()) {
+            return;
+        }
+
+        $from = $message['from'] ?? null;
+        $type = $message['type'] ?? 'unknown';
+
+        // Grab sender name from contacts array
+        $fromName = null;
+        foreach ($contacts as $contact) {
+            if (($contact['wa_id'] ?? null) === $from) {
+                $fromName = $contact['profile']['name'] ?? null;
+                break;
+            }
+        }
+
+        // Extract body / media based on type
+        $body     = null;
+        $mediaUrl = null;
+        $mimeType = null;
+
+        switch ($type) {
+            case 'text':
+                $body = $message['text']['body'] ?? null;
+                break;
+
+            case 'image':
+                $mediaUrl = $message['image']['url']       ?? null;
+                $mimeType = $message['image']['mime_type'] ?? null;
+                $body     = $message['image']['caption']   ?? null;
+                break;
+
+            case 'video':
+                $mediaUrl = $message['video']['url']       ?? null;
+                $mimeType = $message['video']['mime_type'] ?? null;
+                $body     = $message['video']['caption']   ?? null;
+                break;
+
+            case 'document':
+                $mediaUrl = $message['document']['url']       ?? null;
+                $mimeType = $message['document']['mime_type'] ?? null;
+                $body     = $message['document']['caption']   ?? null;
+                break;
+
+            case 'audio':
+            case 'voice':
+                $mediaUrl = $message[$type]['url']       ?? null;
+                $mimeType = $message[$type]['mime_type'] ?? null;
+                break;
+
+            case 'location':
+                $body = json_encode($message['location'] ?? []);
+                break;
+
+            case 'button':
+                $body = $message['button']['text'] ?? null;
+                break;
+
+            case 'interactive':
+                $body = $message['interactive']['button_reply']['title']
+                     ?? $message['interactive']['list_reply']['title']
+                     ?? null;
+                break;
+        }
+
+        WhatsappIncomingMessage::create([
+            'wa_message_id'    => $waMessageId,
+            'from_phone'       => $from,
+            'to_phone'         => $toPhone,
+            'from_name'        => $fromName,
+            'type'             => $type,
+            'body'             => $body,
+            'media_url'        => $mediaUrl,
+            'media_mime_type'  => $mimeType,
+            'raw_payload'      => $message,
+            'wa_timestamp'     => Carbon::createFromTimestamp((int) ($message['timestamp'] ?? now()->timestamp)),
         ]);
     }
 

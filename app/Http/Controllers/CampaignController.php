@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Jobs\SendCampaignMessageJob;
 use App\Models\Campaign;
 use App\Models\CampaignMessage;
 use App\Services\WhatsAppService;
@@ -113,8 +114,11 @@ class CampaignController extends Controller
 
         // Dispatch one job per pending message
         foreach ($campaign->pendingMessages()->cursor() as $message) {
-            \App\Jobs\SendCampaignMessageJob::dispatch($message);
+            \Log::info($message);
+            SendCampaignMessageJob::dispatch($message);
         }
+        
+        $campaign->update(['status' => 'completed']);
 
         return redirect()->route('campaigns.show', $campaign)
             ->with('success', 'Campaign completed!');

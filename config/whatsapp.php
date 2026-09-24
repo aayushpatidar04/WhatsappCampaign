@@ -9,4 +9,5 @@ return [
     'header_image_url' => env('WHATSAPP_HEADER_IMAGE_URL'),
     'webhook_verify_token' => env('WHATSAPP_WEBHOOK_VERIFY_TOKEN'),
     'rate_limit_per_minute' => env('RATE_LIMIT_PER_MINUTE', 30),
+    'header_video_url' => env('WHATSAPP_HEADER_VIDEO_URL'),
 ];

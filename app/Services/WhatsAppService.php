@@ -16,6 +16,10 @@ class WhatsAppService
     protected string $languageCode;
     protected int $rateLimitPerMinute;
     protected ?string $headerImageUrl;
+    
+    protected ?string $headerVideoUrl = null;
+    protected ?string $bodyText = null;
+    protected array $bodyVariables = []; 
 
     public function __construct()
     {
@@ -26,42 +30,167 @@ class WhatsAppService
         $this->languageCode = config('whatsapp.language_code');
         $this->rateLimitPerMinute = config('whatsapp.rate_limit_per_minute', 20);
         $this->headerImageUrl = config('whatsapp.header_image_url');
+        $this->headerVideoUrl = config('whatsapp.header_video_url');
     }
 
+    // public function sendCampaignMessage(CampaignMessage $message): array
+    // {
+    //     $phoneNumber = preg_replace('/[^0-9]/', '', $message->phone_number);
+
+    //     if (strlen($phoneNumber) < 10) {
+    //         $this->markFailed($message, 'Invalid phone number length', 'INVALID_NUMBER');
+    //         return ['success' => false, 'error' => 'Invalid phone number length'];
+    //     }
+
+    //     if (strlen($phoneNumber) === 10) {
+    //         $phoneNumber = '91' . $phoneNumber;
+    //     }
+
+    //     $url = "{$this->baseUrl}/{$this->phoneNumberId}/messages";
+
+    //     $templatePayload = [
+    //         'name' => $this->templateName,
+    //         'language' => ['code' => $this->languageCode],
+    //     ];
+
+    //     if ($this->headerImageUrl) {
+    //         $templatePayload['components'] = [
+    //             [
+    //                 'type' => 'header',
+    //                 'parameters' => [
+    //                     [
+    //                         'type' => 'image',
+    //                         'image' => ['link' => $this->headerImageUrl],
+    //                     ],
+    //                 ],
+    //             ],
+    //         ];
+    //     }
+
+    //     $payload = [
+    //         'messaging_product' => 'whatsapp',
+    //         'recipient_type' => 'individual',
+    //         'to' => $phoneNumber,
+    //         'type' => 'template',
+    //         'template' => $templatePayload,
+    //     ];
+
+    //     try {
+    //         $response = Http::withHeaders([
+    //             'Authorization' => 'Bearer ' . $this->accessToken,
+    //             'Content-Type' => 'application/json',
+    //         ])->post($url, $payload);
+
+    //         $responseData = $response->json();
+
+    //         if ($response->successful() && isset($responseData['messages'][0]['id'])) {
+    //             $whatsappId = $responseData['messages'][0]['id'];
+                
+    //             $message->update([
+    //                 'whatsapp_message_id' => $whatsappId,
+    //                 'status' => 'sent',
+    //                 'sent_at' => now(),
+    //             ]);
+
+    //             $message->campaign->increment('sent_count');
+
+    //             Log::info('WhatsApp message sent', [
+    //                 'campaign_id' => $message->campaign_id,
+    //                 'phone' => $phoneNumber,
+    //                 'whatsapp_id' => $whatsappId,
+    //             ]);
+
+    //             return ['success' => true, 'whatsapp_id' => $whatsappId];
+    //         }
+
+    //         $errorMsg = $responseData['error']['message'] ?? 'Unknown API error';
+    //         $errorCode = $responseData['error']['code'] ?? 'UNKNOWN';
+    //         $errorSubcode = $responseData['error']['error_subcode'] ?? null;
+    //         $failureReason = $this->mapFailureReason($errorMsg, $errorCode);
+
+    //         $this->markFailed($message, $errorMsg, $errorCode, $errorSubcode, $failureReason);
+
+    //         Log::error('WhatsApp API error', [
+    //             'campaign_id' => $message->campaign_id,
+    //             'phone' => $phoneNumber,
+    //             'error' => $errorMsg,
+    //             'code' => $errorCode,
+    //         ]);
+
+    //         return [
+    //             'success' => false,
+    //             'error' => $errorMsg,
+    //             'code' => $errorCode,
+    //             'failure_reason' => $failureReason,
+    //         ];
+
+    //     } catch (\Exception $e) {
+    //         $this->markFailed($message, $e->getMessage(), 'EXCEPTION');
+    //         return ['success' => false, 'error' => $e->getMessage()];
+    //     }
+    // }
+    
     public function sendCampaignMessage(CampaignMessage $message): array
     {
         $phoneNumber = preg_replace('/[^0-9]/', '', $message->phone_number);
-
+    
         if (strlen($phoneNumber) < 10) {
             $this->markFailed($message, 'Invalid phone number length', 'INVALID_NUMBER');
             return ['success' => false, 'error' => 'Invalid phone number length'];
         }
-
+    
         if (strlen($phoneNumber) === 10) {
             $phoneNumber = '91' . $phoneNumber;
         }
-
+    
         $url = "{$this->baseUrl}/{$this->phoneNumberId}/messages";
-
+    
         $templatePayload = [
             'name' => $this->templateName,
             'language' => ['code' => $this->languageCode],
         ];
-
-        if ($this->headerImageUrl) {
-            $templatePayload['components'] = [
-                [
-                    'type' => 'header',
-                    'parameters' => [
-                        [
-                            'type' => 'image',
-                            'image' => ['link' => $this->headerImageUrl],
-                        ],
+    
+        $components = [];
+    
+        // Video header component
+        if ($this->headerVideoUrl) {
+            $components[] = [
+                'type' => 'header',
+                'parameters' => [
+                    [
+                        'type' => 'video',
+                        'video' => ['link' => $this->headerVideoUrl],
                     ],
                 ],
             ];
         }
-
+    
+        // Text body component (with variables if needed)
+        if ($this->bodyText) {
+            $bodyParameters = [];
+            
+            // If you have variables to substitute in the body text
+            if (!empty($this->bodyVariables)) {
+                foreach ($this->bodyVariables as $index => $variable) {
+                    $bodyParameters[] = [
+                        'type' => 'text',
+                        'text' => $variable,
+                    ];
+                }
+            }
+    
+            $bodyComponent = [
+                'type' => 'body',
+                'parameters' => $bodyParameters,
+            ];
+    
+            $components[] = $bodyComponent;
+        }
+    
+        if (!empty($components)) {
+            $templatePayload['components'] = $components;
+        }
+    
         $payload = [
             'messaging_product' => 'whatsapp',
             'recipient_type' => 'individual',
@@ -69,15 +198,15 @@ class WhatsAppService
             'type' => 'template',
             'template' => $templatePayload,
         ];
-
+    
         try {
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $this->accessToken,
                 'Content-Type' => 'application/json',
             ])->post($url, $payload);
-
+    
             $responseData = $response->json();
-
+    
             if ($response->successful() && isset($responseData['messages'][0]['id'])) {
                 $whatsappId = $responseData['messages'][0]['id'];
                 
@@ -86,39 +215,39 @@ class WhatsAppService
                     'status' => 'sent',
                     'sent_at' => now(),
                 ]);
-
+    
                 $message->campaign->increment('sent_count');
-
+    
                 Log::info('WhatsApp message sent', [
                     'campaign_id' => $message->campaign_id,
                     'phone' => $phoneNumber,
                     'whatsapp_id' => $whatsappId,
                 ]);
-
+    
                 return ['success' => true, 'whatsapp_id' => $whatsappId];
             }
-
+    
             $errorMsg = $responseData['error']['message'] ?? 'Unknown API error';
             $errorCode = $responseData['error']['code'] ?? 'UNKNOWN';
             $errorSubcode = $responseData['error']['error_subcode'] ?? null;
             $failureReason = $this->mapFailureReason($errorMsg, $errorCode);
-
+    
             $this->markFailed($message, $errorMsg, $errorCode, $errorSubcode, $failureReason);
-
+    
             Log::error('WhatsApp API error', [
                 'campaign_id' => $message->campaign_id,
                 'phone' => $phoneNumber,
                 'error' => $errorMsg,
                 'code' => $errorCode,
             ]);
-
+    
             return [
                 'success' => false,
                 'error' => $errorMsg,
                 'code' => $errorCode,
                 'failure_reason' => $failureReason,
             ];
-
+    
         } catch (\Exception $e) {
             $this->markFailed($message, $e->getMessage(), 'EXCEPTION');
             return ['success' => false, 'error' => $e->getMessage()];
