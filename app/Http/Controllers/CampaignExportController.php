@@ -33,7 +33,7 @@ class CampaignExportController extends Controller
             fputcsv($handle, []);
             fputcsv($handle, ['Campaign Name', $campaign->name]);
             fputcsv($handle, ['Description', $campaign->description ?? 'N/A']);
-            fputcsv($handle, ['Template', $campaign->template_name]);
+            fputcsv($handle, ['Template', $campaign->template->name ?? $campaign->template_name]);
             fputcsv($handle, ['Language', $campaign->language_code]);
             fputcsv($handle, ['Status', ucfirst($campaign->status)]);
             fputcsv($handle, ['Created At', $campaign->created_at->format('Y-m-d H:i:s')]);

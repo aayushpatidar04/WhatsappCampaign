@@ -55,6 +55,19 @@
                             <span class="text-xs text-gray-500">{{ $campaign->created_at->format('M d, Y') }}</span>
                         </div>
 
+                        <div class="mb-3">
+                            @if($campaign->account)
+                                <span class="inline-flex items-center gap-1 bg-indigo-50 text-indigo-700 px-2 py-0.5 rounded text-xs">
+                                    <i class="fas fa-satellite-dish text-[10px]"></i>{{ $campaign->account->name }}
+                                </span>
+                            @endif
+                            @if($campaign->template)
+                                <span class="inline-flex items-center gap-1 bg-teal-50 text-teal-700 px-2 py-0.5 rounded text-xs ml-1">
+                                    <i class="fas fa-file-alt text-[10px]"></i>{{ $campaign->template->name }}
+                                </span>
+                            @endif
+                        </div>
+
                         <h3 class="text-lg font-bold text-gray-800 mb-2">{{ $campaign->name }}</h3>
                         <p class="text-sm text-gray-600 mb-4 line-clamp-2">{{ $campaign->description ?? 'No description' }}</p>
 

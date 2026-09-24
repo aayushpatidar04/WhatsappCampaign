@@ -22,18 +22,27 @@ class CampaignMessage extends Model
         'delivered_at',
         'read_at',
         'failed_at',
+        'variables',
+        'has_attachment',
     ];
 
     protected $casts = [
-        'sent_at' => 'datetime',
-        'delivered_at' => 'datetime',
-        'read_at' => 'datetime',
-        'failed_at' => 'datetime',
+        'sent_at'        => 'datetime',
+        'delivered_at'   => 'datetime',
+        'read_at'        => 'datetime',
+        'failed_at'      => 'datetime',
+        'variables'      => 'array',
+        'has_attachment' => 'boolean',
     ];
 
     public function campaign(): BelongsTo
     {
         return $this->belongsTo(Campaign::class);
+    }
+
+    public function file(): BelongsTo
+    {
+        return $this->belongsTo(CampaignFile::class, 'campaign_message_id');
     }
 
     public function scopeByStatus($query, string $status)

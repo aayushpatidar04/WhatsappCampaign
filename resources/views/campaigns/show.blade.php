@@ -62,14 +62,29 @@
                                 {{ ucfirst($campaign->status) }}
                             </span>
                         </div>
+                        @if($campaign->account)
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Account</span>
+                            <span class="font-medium">{{ $campaign->account->name }}</span>
+                        </div>
+                        @endif
+                        @if($campaign->template)
+                        <div class="flex justify-between">
+                            <span class="text-gray-500">Template</span>
+                            <span class="font-medium">{{ $campaign->template->name }} ({{ $campaign->language_code }})</span>
+                        </div>
+                        @else
                         <div class="flex justify-between">
                             <span class="text-gray-500">Template</span>
                             <span class="font-medium">{{ $campaign->template_name }}</span>
                         </div>
+                        @endif
+                        @if(!empty($campaign->column_mapping))
                         <div class="flex justify-between">
-                            <span class="text-gray-500">Language</span>
-                            <span class="font-medium">{{ $campaign->language_code }}</span>
+                            <span class="text-gray-500">Variables</span>
+                            <span class="font-medium text-xs">{{ implode(', ', array_values($campaign->column_mapping)) }}</span>
                         </div>
+                        @endif
                         <div class="flex justify-between">
                             <span class="text-gray-500">Created</span>
                             <span class="font-medium">{{ $campaign->created_at->format('M d, Y H:i') }}</span>

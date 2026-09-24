@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\Relations\BelongsTo;
 use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Campaign extends Model
@@ -10,6 +11,8 @@ class Campaign extends Model
     protected $fillable = [
         'name',
         'description',
+        'whatsapp_account_id',
+        'campaign_template_id',
         'template_name',
         'language_code',
         'status',
@@ -20,16 +23,34 @@ class Campaign extends Model
         'failed_count',
         'started_at',
         'completed_at',
+        'column_mapping',
+        'country_code',
     ];
 
     protected $casts = [
-        'started_at' => 'datetime',
-        'completed_at' => 'datetime',
+        'started_at'     => 'datetime',
+        'completed_at'   => 'datetime',
+        'column_mapping' => 'array',
     ];
+
+    public function account(): BelongsTo
+    {
+        return $this->belongsTo(WhatsappAccount::class);
+    }
+
+    public function template(): BelongsTo
+    {
+        return $this->belongsTo(CampaignTemplate::class, 'campaign_template_id');
+    }
 
     public function messages(): HasMany
     {
         return $this->hasMany(CampaignMessage::class);
+    }
+
+    public function files(): HasMany
+    {
+        return $this->hasMany(CampaignFile::class);
     }
 
     public function pendingMessages(): HasMany

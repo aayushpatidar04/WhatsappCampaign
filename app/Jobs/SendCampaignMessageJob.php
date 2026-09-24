@@ -22,7 +22,6 @@ class SendCampaignMessageJob implements ShouldQueue
 
     public function handle(WhatsAppService $whatsappService)
     {
-        \Log::info('we are here');
         $whatsappService->sendCampaignMessage($this->message);
     }
 }
