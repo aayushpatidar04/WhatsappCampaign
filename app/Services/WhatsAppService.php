@@ -25,6 +25,7 @@ class WhatsAppService
         $account = $campaign->account;
         $template = $campaign->template;
 
+        $variables = $message->variables ?? [];
         $phoneNumber = preg_replace('/[^0-9]/', '', $message->phone_number);
         if (strlen($phoneNumber) < 10) {
             return $this->markFailed($message, 'Invalid phone number length', 'INVALID_NUMBER', null, 'INVALID_NUMBER');
@@ -63,9 +64,11 @@ class WhatsAppService
                         // Upload the file via /media endpoint and use the returned handle
                         $mediaId = $this->uploadMedia($account, $attachedFile);
                         if ($mediaId) {
+                            $param = ['id' => $mediaId];
+                            $param['filename'] = $variables["1"];
                             $headerComponent['parameters'][] = [
                                 'type' => $template->header_type,
-                                $template->header_type => ['id' => $mediaId],
+                                $template->header_type => $param,
                             ];
                         } else {
                             return $this->markFailed($message, 'Media upload failed', 'MEDIA_UPLOAD_ERROR', null, 'OTHER');
@@ -80,7 +83,7 @@ class WhatsAppService
         }
 
         // Body components (variables in {{1}}, {{2}} placeholders)
-        $variables = $message->variables ?? [];
+        
         $templateVars = $template->body_variables ?? [];
 
         if (!empty($templateVars)) {
@@ -135,6 +138,18 @@ class WhatsAppService
         $accessToken = EncryptionService::decrypt($account->access_token_encrypted);
         $url = "https://graph.facebook.com/{$account->api_version}/{$account->phone_number_id}/messages";
 
+        Log::info('WhatsApp Campaign Payload', [
+            'campaign_id' => $campaign->id,
+            'message_id' => $message->id,
+            'phone' => $phoneNumber,
+            'template' => $template->name,
+            'language' => $template->language_code,
+            'header_type' => $template->header_type,
+            'variables' => $variables,
+            'components' => $components,
+            'payload' => $payload,
+        ]);
+
         try {
             $response = Http::withHeaders([
                 'Authorization' => 'Bearer ' . $accessToken,
@@ -142,6 +157,13 @@ class WhatsAppService
             ])->timeout(30)->post($url, $payload);
 
             $responseData = $response->json();
+
+            Log::info('WhatsApp API Response', [
+                'campaign_id' => $campaign->id,
+                'message_id' => $message->id,
+                'status' => $response->status(),
+                'response' => $responseData,
+            ]);
 
             if ($response->successful() && isset($responseData['messages'][0]['id'])) {
                 $whatsappId = $responseData['messages'][0]['id'];

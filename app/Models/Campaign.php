@@ -35,7 +35,7 @@ class Campaign extends Model
 
     public function account(): BelongsTo
     {
-        return $this->belongsTo(WhatsappAccount::class);
+        return $this->belongsTo(WhatsappAccount::class, 'whatsapp_account_id');
     }
 
     public function template(): BelongsTo

@@ -55,9 +55,9 @@ class CampaignController extends Controller
             'whatsapp_account_id' => 'nullable|exists:whatsapp_accounts,id',
             'campaign_template_id' => 'nullable|exists:campaign_templates,id',
             'country_code'        => 'nullable|string|max:5',
-            'phone_column'        => 'required_without:numbers_input|string',
-            'numbers_input'       => 'required_without:excel_file|string',
-            'excel_file'          => 'required_without:numbers_input|file|mimes:xlsx,xls,csv|max:10240',
+            'phone_column'        => 'nullable|required_without:numbers_input|string',
+            'numbers_input'       => 'nullable|required_without:excel_file|string',
+            'excel_file'          => 'nullable|required_without:numbers_input|file|mimes:xlsx,xls,csv|max:10240',
             'attachment_zip'      => 'nullable|file|mimes:zip|max:51200',
         ]);
 
